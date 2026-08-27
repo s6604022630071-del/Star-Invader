@@ -499,110 +499,237 @@ function ring(e,n=18,s=2.2,offset=0,color='#b884ff'){
 }
 
 function fireBossPattern(patternName){
+  if(!boss)return;
   const p=CONFIG.BOSS.PATTERNS[patternName];
   const d=difficultySettings[difficulty];
   if(!p)return;
 
-  const bulletsBefore=enemyBullets.length;
+  const before=enemyBullets.length;
   boss.patternClock++;
+  boss.visualPulse=1;
+  boss.visualRock=0;
 
-  if(patternName==='ROTATING_RING' && boss.patternClock%p.FIRE_INTERVAL===0){
-    boss.patternRotation+=p.ROTATION_SPEED;
-    const count=Math.round(p.BULLETS*d.bossDensity), speed=p.SPEED*d.bulletSpeed;
-    for(let i=0;i<count;i++){
-      const a=boss.patternRotation+i*Math.PI*2/count;
-      enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:5,color:'#8e84ff',shape:'orb'});
+  const push=(a,s,color='#b884ff',shape='orb')=>{
+    const speed=s*d.bulletSpeed;
+    enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:5,color,shape});
+  };
+  const ringShot=(count,speed,offset,color='#b884ff',shape='orb')=>{
+    count=Math.max(6,Math.round(count*d.bossDensity));
+    for(let i=0;i<count;i++) push(offset+i*Math.PI*2/count,speed,color,shape);
+  };
+
+  // Stage 1 — crystal patterns
+  if(patternName==='PRISM_RING'){
+    boss.visualPulse=1+.035*Math.sin(boss.patternClock*.16);
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      boss.patternRotation+=p.ROTATION_SPEED;
+      ringShot(p.BULLETS,p.SPEED,boss.patternRotation,'#69bfff','orb');
     }
-  }
-  else if(patternName==='DOUBLE_SPIRAL' && boss.patternClock%p.FIRE_INTERVAL===0){
-    boss.patternRotation+=p.ROTATION_SPEED;
-    const speed=p.SPEED*d.bulletSpeed;
-    for(let arm=0;arm<2;arm++){
-      const base=boss.patternRotation+arm*p.ARM_OFFSET;
-      for(let i=0;i<p.BULLETS_PER_ARM;i++){
-        const a=base+i*.10;
-        enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:5,color:arm===0?'#ff5d9f':'#68d8ff',shape:arm===0?'diamond':'orb'});
+  }else if(patternName==='PRISM_FAN'){
+    boss.visualRock=Math.sin(boss.patternClock*.08)*p.SWAY;
+    boss.patternRotation=boss.visualRock;
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      const n=Math.max(7,Math.round(p.BULLETS*d.bossDensity));
+      const center=Math.PI/2+boss.visualRock;
+      for(let i=0;i<n;i++) push(center-p.ARC/2+p.ARC*i/Math.max(1,n-1),p.SPEED,'#8fd8ff','diamond');
+    }
+  }else if(patternName==='PRISM_CROSS'){
+    boss.patternRotation+=p.ROTATION_SPEED*.10;
+    boss.visualPulse=1+.025*Math.sin(boss.patternClock*.22);
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      for(let arm=0;arm<p.ARMS;arm++){
+        const base=boss.patternRotation+arm*Math.PI*2/p.ARMS;
+        for(let j=0;j<p.BULLETS_PER_ARM;j++) push(base+(j-(p.BULLETS_PER_ARM-1)/2)*.075,p.SPEED,'#62aaff','diamond');
       }
     }
-  }
-  else if(patternName==='PULSE_RINGS' && boss.patternClock%p.FIRE_INTERVAL===0){
-    boss.patternRotation+=p.ROTATION_STEP;
-    const count=Math.round(p.BULLETS*d.bossDensity), speed=p.SPEED*d.bulletSpeed;
-    for(let i=0;i<count;i++){
-      const a=boss.patternRotation+i*Math.PI*2/count;
-      enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:5,color:'#ffd05f',shape:'diamond'});
-    }
-  }
-  else if(patternName==='FLOWER' && boss.patternClock%p.FIRE_INTERVAL===0){
-    boss.patternRotation+=p.ROTATION_SPEED;
-    const petals=Math.max(4,Math.round(p.PETALS*d.bossDensity)), speed=p.SPEED*d.bulletSpeed;
-    for(let i=0;i<petals;i++){
-      const base=boss.patternRotation+i*Math.PI*2/petals;
-      const wave=Math.sin(boss.patternClock*.08+i)*p.WAVE_AMOUNT;
-      for(const [a,color,shape] of [[base+wave,'#ff7fbb','orb'],[base-wave,'#b58cff','diamond']])
-        enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:5,color,shape});
-    }
-  }
-  else if(patternName==='STAR_BURST' && boss.patternClock%p.FIRE_INTERVAL===0){
-    boss.patternRotation+=p.ROTATION_SPEED;
-    const speed=p.SPEED*d.bulletSpeed;
-    for(let point=0;point<p.POINTS;point++){
-      const base=boss.patternRotation+point*Math.PI*2/p.POINTS;
-      for(let j=0;j<p.BULLETS_PER_POINT;j++){
-        const a=base+(j-(p.BULLETS_PER_POINT-1)/2)*.10;
-        enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:5,color:'#8ff0ff',shape:'star'});
+  }else if(patternName==='PRISM_SPLIT'){
+    boss.visualPulse=1+.05*Math.sin(boss.patternClock*.30);
+    boss.patternRotation=Math.sin(boss.patternClock*.06)*.12;
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      const base=Math.PI/2;
+      for(let i=0;i<p.PAIRS;i++){
+        const off=(i+1)*p.SPREAD;
+        push(base-off,p.SPEED,'#9ce7ff','orb'); push(base+off,p.SPEED,'#9ce7ff','orb');
       }
     }
-  }
-  else if(patternName==='CROSS_LANCE' && boss.patternClock%p.FIRE_INTERVAL===0){
-    boss.patternRotation+=p.ROTATION_SPEED;
-    const speed=p.SPEED*d.bulletSpeed;
-    for(let arm=0;arm<p.ARMS;arm++){
-      const base=boss.patternRotation+arm*Math.PI*2/p.ARMS;
-      for(let j=0;j<p.BULLETS_PER_ARM;j++){
-        const a=base+(j-(p.BULLETS_PER_ARM-1)/2)*.075;
-        enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:5,color:'#ff9b6b',shape:'diamond'});
-      }
-    }
-  }
-  else if(patternName==='ORBIT_WAVE' && boss.patternClock%p.FIRE_INTERVAL===0){
-    boss.patternRotation+=p.ROTATION_SPEED;
-    const count=Math.round(p.ORBS*d.bossDensity), speed=p.SPEED*d.bulletSpeed;
-    for(let i=0;i<count;i++){
-      const base=boss.patternRotation+i*Math.PI*2/count;
-      const a=base+Math.sin(boss.patternClock*.06+i)*p.WAVE;
-      enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:5,color:'#71ffd2',shape:i%2?'orb':'star'});
-    }
-  }
-  else if(patternName==='VOID_CAGE' && boss.patternClock%p.FIRE_INTERVAL===0){
-    boss.patternRotation+=p.ROTATION_SPEED;
-    for(let ringIndex=0;ringIndex<p.RINGS;ringIndex++){
-      const count=Math.max(8,Math.round(p.BULLETS*d.bossDensity));
-      const speed=(p.SPEED+ringIndex*p.SPEED_STEP)*d.bulletSpeed;
-      const offset=boss.patternRotation+ringIndex*(Math.PI/count);
-      for(let i=0;i<count;i++){
-        const a=offset+i*Math.PI*2/count;
-        enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:6,color:ringIndex%2?'#d24cff':'#6a3cff',shape:ringIndex%2?'diamond':'orb'});
-      }
-    }
-  }
-  else if(patternName==='VOID_LANCE' && boss.patternClock%p.FIRE_INTERVAL===0){
-    boss.patternRotation+=p.ROTATION_SPEED;
-    const speed=p.SPEED*d.bulletSpeed;
-    for(let arm=0;arm<p.ARMS;arm++){
-      const base=boss.patternRotation+arm*Math.PI*2/p.ARMS;
-      for(let j=0;j<p.BULLETS_PER_ARM;j++){
-        const a=base+(j-(p.BULLETS_PER_ARM-1)/2)*p.SPREAD;
-        enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:6,color:'#ff3df2',shape:'diamond'});
-      }
+  }else if(patternName==='PRISM_PULSE'){
+    boss.visualPulse=1+.07*Math.sin(boss.patternClock*.18);
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      boss.patternRotation+=p.ROTATION_STEP;
+      ringShot(p.BULLETS,p.SPEED,boss.patternRotation,'#b6eeff','diamond');
     }
   }
 
-  if(enemyBullets.length>bulletsBefore){
-    playBossShotSfx();
+  // Stage 2 — crescent patterns
+  else if(patternName==='MOON_SPIRAL'){
+    boss.patternRotation+=p.ROTATION_SPEED*.12;
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      for(let arm=0;arm<p.ARMS;arm++){
+        const base=boss.patternRotation+arm*Math.PI*2/p.ARMS;
+        for(let j=0;j<p.BULLETS_PER_ARM;j++) push(base+j*.10,p.SPEED,arm?'#cf7dff':'#8c63ff','orb');
+      }
+    }
+  }else if(patternName==='MOON_ARC'){
+    boss.visualRock=Math.sin(boss.patternClock*.07)*p.ROCK;
+    boss.patternRotation=boss.visualRock;
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      const n=Math.max(8,Math.round(p.BULLETS*d.bossDensity));
+      const center=Math.PI/2+boss.visualRock;
+      for(let i=0;i<n;i++) push(center-p.ARC/2+p.ARC*i/Math.max(1,n-1),p.SPEED,'#d58cff','diamond');
+    }
+  }else if(patternName==='MOON_WAVE'){
+    boss.patternRotation+=p.ROTATION_SPEED*.10;
+    boss.visualPulse=1+.025*Math.sin(boss.patternClock*.20);
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      const n=Math.max(8,Math.round(p.BULLETS*d.bossDensity));
+      for(let i=0;i<n;i++) push(boss.patternRotation+i*Math.PI*2/n+Math.sin(boss.patternClock*.1+i)*p.WAVE,p.SPEED,'#b36cff','orb');
+    }
+  }else if(patternName==='MOON_MIRROR'){
+    boss.visualRock=Math.sin(boss.patternClock*.09)*.22;
+    boss.patternRotation=boss.visualRock;
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      const n=Math.max(6,Math.round(p.BULLETS*d.bossDensity));
+      for(let i=0;i<n;i++){
+        const off=(i-(n-1)/2)*p.OFFSET;
+        push(Math.PI/2+off,p.SPEED,'#ef9cff','diamond');
+        push(-Math.PI/2-off,p.SPEED*.88,'#7d59ff','orb');
+      }
+    }
+  }else if(patternName==='MOON_ORBIT'){
+    boss.patternRotation+=p.ROTATION_SPEED*.14;
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      const n=Math.max(8,Math.round(p.ORBS*d.bossDensity));
+      for(let i=0;i<n;i++) push(boss.patternRotation+i*Math.PI*2/n,p.SPEED*(1+.12*Math.sin(i+boss.patternClock*.08)),'#c77dff','orb');
+    }
   }
+
+  // Stage 3 — fortress patterns
+  else if(patternName==='FORT_LANCE'){
+    boss.patternRotation+=p.ROTATION_SPEED*.08;
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      for(let arm=0;arm<p.ARMS;arm++){
+        const base=boss.patternRotation+arm*Math.PI*2/p.ARMS;
+        for(let j=0;j<p.BULLETS_PER_ARM;j++) push(base,p.SPEED+j*.18,'#ff596e','diamond');
+      }
+    }
+  }else if(patternName==='FORT_WALL'){
+    boss.patternRotation=0;
+    boss.visualPulse=1+.018*Math.sin(boss.patternClock*.25);
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      const cols=Math.max(5,Math.round(p.COLUMNS*d.bossDensity));
+      for(let i=0;i<cols;i++) push(Math.PI/2+(i-(cols-1)/2)*p.ANGLE_STEP,p.SPEED,'#ff7b69','diamond');
+    }
+  }else if(patternName==='FORT_BURST'){
+    boss.patternRotation+=p.ROTATION_SPEED*.09;
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      for(let point=0;point<p.POINTS;point++){
+        const base=boss.patternRotation+point*Math.PI*2/p.POINTS;
+        for(let j=0;j<p.BULLETS_PER_POINT;j++) push(base+(j-(p.BULLETS_PER_POINT-1)/2)*.09,p.SPEED,'#ff435f','orb');
+      }
+    }
+  }else if(patternName==='FORT_GRID'){
+    boss.visualRock=Math.sin(boss.patternClock*.05)*.08;
+    boss.patternRotation=boss.visualRock;
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      for(let row=0;row<p.ROWS;row++){
+        const sway=Math.sin(boss.patternClock*.08+row)*p.SWAY;
+        for(let i=-3;i<=3;i++) push(Math.PI/2+i*.18+sway,p.SPEED+row*.10,'#ff9a76','diamond');
+      }
+    }
+  }else if(patternName==='FORT_CANNON'){
+    boss.visualPulse=1+.06*Math.sin(boss.patternClock*.18);
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      for(let v=0;v<p.VOLLEYS;v++){
+        const center=Math.PI/2+(v-(p.VOLLEYS-1)/2)*.42;
+        for(let i=0;i<p.BULLETS;i++) push(center-p.ARC/2+p.ARC*i/Math.max(1,p.BULLETS-1),p.SPEED+v*.12,'#ff304e','orb');
+      }
+    }
+  }
+
+  // Stage 4 — bloom patterns
+  else if(patternName==='PETAL_FLOWER'){
+    boss.patternRotation+=p.ROTATION_SPEED*.12;
+    boss.visualPulse=1+.035*Math.sin(boss.patternClock*.18);
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      const petals=Math.max(5,Math.round(p.PETALS*d.bossDensity));
+      for(let i=0;i<petals;i++){
+        const base=boss.patternRotation+i*Math.PI*2/petals;
+        const w=Math.sin(boss.patternClock*.09+i)*p.WAVE;
+        push(base+w,p.SPEED,'#69ffb0','orb'); push(base-w,p.SPEED,'#9affd0','diamond');
+      }
+    }
+  }else if(patternName==='PETAL_SEEDS'){
+    boss.patternRotation+=p.ROTATION_SPEED*.10;
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      const n=Math.max(8,Math.round(p.BULLETS*d.bossDensity));
+      for(let i=0;i<n;i++) push(boss.patternRotation+i*Math.PI*2/n,p.SPEED+(i%2)*.35,'#7cff9b','orb');
+    }
+  }else if(patternName==='PETAL_VINES'){
+    boss.visualRock=Math.sin(boss.patternClock*.08)*.18;
+    boss.patternRotation=boss.visualRock;
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      const n=Math.max(8,Math.round(p.BULLETS*d.bossDensity));
+      for(let i=0;i<n;i++) push(Math.PI/2+(i-(n-1)/2)*.16+Math.sin(boss.patternClock*.08+i)*p.CURVE,p.SPEED,'#55d98c','diamond');
+    }
+  }else if(patternName==='PETAL_BLOOM'){
+    boss.visualPulse=1+.08*Math.sin(boss.patternClock*.14);
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      boss.patternRotation+=p.STEP;
+      for(let r=0;r<p.RINGS;r++) ringShot(p.BULLETS,p.SPEED+r*.30,boss.patternRotation+r*.16,'#b4ffc5',r?'diamond':'orb');
+    }
+  }else if(patternName==='PETAL_SWIRL'){
+    boss.patternRotation+=p.ROTATION_SPEED*.13;
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      const n=Math.max(8,Math.round(p.ORBS*d.bossDensity));
+      for(let i=0;i<n;i++) push(boss.patternRotation+i*Math.PI*2/n+Math.sin(i+boss.patternClock*.1)*p.WAVE,p.SPEED,'#66ffc0',i%2?'diamond':'orb');
+    }
+  }
+
+  // Stage 5 — void patterns
+  else if(patternName==='VOID_CAGE'){
+    boss.patternRotation+=p.ROTATION_SPEED*.11;
+    boss.visualPulse=1+.025*Math.sin(boss.patternClock*.20);
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      for(let side=0;side<p.SIDES;side++){
+        const base=boss.patternRotation+side*Math.PI*2/p.SIDES;
+        for(let j=0;j<p.BULLETS_PER_SIDE;j++) push(base+(j-(p.BULLETS_PER_SIDE-1)/2)*.06,p.SPEED+j*.12,'#d8b0ff','diamond');
+      }
+    }
+  }else if(patternName==='VOID_LANCE'){
+    boss.patternRotation+=p.ROTATION_SPEED*.15;
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      for(let arm=0;arm<p.ARMS;arm++){
+        const a=boss.patternRotation+arm*Math.PI*2/p.ARMS;
+        for(let j=0;j<p.BULLETS_PER_ARM;j++) push(a,p.SPEED+j*.22,'#ffffff',j%2?'diamond':'orb');
+      }
+    }
+  }else if(patternName==='VOID_COLLAPSE'){
+    boss.visualPulse=1+.09*Math.sin(boss.patternClock*.12);
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      boss.patternRotation+=p.ROTATION_STEP;
+      ringShot(p.BULLETS,p.SPEED,boss.patternRotation,'#8d5cff','diamond');
+    }
+  }else if(patternName==='VOID_TWIST'){
+    boss.patternRotation+=p.ROTATION_SPEED*.18;
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      for(let arm=0;arm<p.ARMS;arm++){
+        const base=boss.patternRotation+arm*Math.PI*2/p.ARMS;
+        for(let j=0;j<p.BULLETS_PER_ARM;j++) push(base+j*.11,p.SPEED,'#b17cff',arm%2?'diamond':'orb');
+      }
+    }
+  }else if(patternName==='VOID_NOVA'){
+    boss.patternRotation+=p.ROTATION_SPEED*.10;
+    boss.visualPulse=1+.045*Math.sin(boss.patternClock*.22);
+    if(boss.patternClock%p.FIRE_INTERVAL===0){
+      for(let point=0;point<p.POINTS;point++){
+        const base=boss.patternRotation+point*Math.PI*2/p.POINTS;
+        for(let j=0;j<p.BULLETS_PER_POINT;j++) push(base+(j-1)*.08,p.SPEED,'#f0d8ff',j===1?'diamond':'orb');
+      }
+    }
+  }
+
+  if(enemyBullets.length>before && typeof playBossShotSfx==='function') playBossShotSfx();
 }
-
 function updateBossPatterns(){
   if(!boss)return;
   boss.clock++;
@@ -619,7 +746,7 @@ function updateBossPatterns(){
       boss.patternClock=0; boss.patternRotation=0;
 
       const point=variant.route[boss.moveIndex];
-      const options=point.patterns||['ROTATING_RING'];
+      const options=point.patterns||variant.route[0].patterns;
       boss.activePattern=difficultySettings[difficulty].RANDOM_BOSS_PATTERN
         ? options[Math.floor(Math.random()*options.length)]
         : options[0];
@@ -663,7 +790,7 @@ function getBossConfig(){
 
 function spawnBoss(){
   const cfg=getBossConfig();
-  const firstPoint=cfg.route?.[0] || {x:.5,y:.18,patterns:['ROTATING_RING']};
+  const firstPoint=cfg.route?.[0] || {x:.5,y:.18,patterns:['PRISM_RING']};
 
   enemies.length=0;
   enemyBullets.length=0;
@@ -674,7 +801,7 @@ function spawnBoss(){
   const startX=Math.max(margin,Math.min(W-margin,W*firstPoint.x));
   const startY=Math.max(margin,Math.min(H-margin,H*firstPoint.y));
 
-  const firstOptions=firstPoint.patterns || ['ROTATING_RING'];
+  const firstOptions=firstPoint.patterns || ['PRISM_RING'];
   const firstPattern=difficultySettings[difficulty]?.RANDOM_BOSS_PATTERN
     ? firstOptions[Math.floor(Math.random()*firstOptions.length)]
     : firstOptions[0];
@@ -715,6 +842,8 @@ function spawnBoss(){
     patternClock:0,
     patternIndex:0,
     patternRotation:0,
+    visualPulse:1,
+    visualRock:0,
     activePattern:firstPattern
   };
 
@@ -1229,11 +1358,12 @@ function draw(){
     }
     if(boss){
       ctx.save();ctx.translate(boss.x,boss.y);
-      const beat=getBeatState();
-      const patternSpin=boss.activePattern?boss.patternRotation:0;
+      const patternSpin=boss.activePattern?(boss.patternRotation||0):0;
       const movementSpin=boss.moveState==='moving'?Math.atan2(boss.targetY-boss.y,boss.targetX-boss.x)+Math.PI/2:0;
-      const bossVisualRotation=boss.moveState==='stopped'?patternSpin+beat.phase*.12:movementSpin;
+      const bossVisualRotation=boss.moveState==='stopped'?patternSpin:movementSpin;
       ctx.rotate(bossVisualRotation);
+      const bossVisualScale=boss.moveState==='stopped'?(boss.visualPulse||1):1;
+      ctx.scale(bossVisualScale,bossVisualScale);
       const bossFlicker=boss.hitFlash>0 && Math.floor(boss.hitFlash/2)%2===1;
       const bossColor=mixHex(stage.bossGradientA,stage.bossGradientB,.25+.55*(.5+.5*Math.sin(getMusicTime()*.9+boss.patternRotation*.5)));
       ctx.fillStyle=bossFlicker?'#ffffff':bossColor;

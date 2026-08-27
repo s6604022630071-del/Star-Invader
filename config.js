@@ -267,61 +267,78 @@ const CONFIG = {
     APPEAR_RING_COUNT: 4,
     HIT_FLICKER_FRAMES: 11,
 
-    // Shared attack definitions. Each stage boss chooses only from its own waypoint patterns.
+    // Five exclusive attacks per stage. No boss reuses another boss's pattern.
     PATTERNS: {
-      ROTATING_RING: { FIRE_INTERVAL: 20, BULLETS: 16, SPEED: 2.45, ROTATION_SPEED: 0.115 },
-      DOUBLE_SPIRAL: { FIRE_INTERVAL: 14, BULLETS_PER_ARM: 3, SPEED: 2.7, ROTATION_SPEED: 0.145, ARM_OFFSET: 3.141592653589793 },
-      PULSE_RINGS: { FIRE_INTERVAL: 52, BULLETS: 30, SPEED: 2.45, ROTATION_STEP: 0.18 },
-      FLOWER: { FIRE_INTERVAL: 27, PETALS: 9, SPEED: 2.8, ROTATION_SPEED: 0.075, WAVE_AMOUNT: 0.38 },
-      STAR_BURST: { FIRE_INTERVAL: 36, POINTS: 5, BULLETS_PER_POINT: 4, SPEED: 3.0, ROTATION_SPEED: 0.10 },
-      CROSS_LANCE: { FIRE_INTERVAL: 30, ARMS: 4, BULLETS_PER_ARM: 5, SPEED: 3.1, ROTATION_SPEED: 0.065 },
-      ORBIT_WAVE: { FIRE_INTERVAL: 18, ORBS: 14, SPEED: 2.55, ROTATION_SPEED: 0.155, WAVE: 0.25 },
+      PRISM_RING:   { FIRE_INTERVAL:22, BULLETS:14, SPEED:2.35, ROTATION_SPEED:.10 },
+      PRISM_FAN:    { FIRE_INTERVAL:29, BULLETS:11, SPEED:2.65, ARC:2.20, SWAY:.45 },
+      PRISM_CROSS:  { FIRE_INTERVAL:34, ARMS:4, BULLETS_PER_ARM:4, SPEED:2.80, ROTATION_SPEED:.055 },
+      PRISM_SPLIT:  { FIRE_INTERVAL:25, PAIRS:6, SPEED:2.52, SPREAD:.20 },
+      PRISM_PULSE:  { FIRE_INTERVAL:56, BULLETS:24, SPEED:2.28, ROTATION_STEP:.16 },
 
-      // Stage 5 final-boss-only attacks.
-      VOID_CAGE: { FIRE_INTERVAL: 42, RINGS: 3, BULLETS: 12, SPEED: 2.65, SPEED_STEP: 0.34, ROTATION_SPEED: 0.105 },
-      VOID_LANCE: { FIRE_INTERVAL: 22, ARMS: 4, BULLETS_PER_ARM: 3, SPEED: 3.35, SPREAD: 0.085, ROTATION_SPEED: 0.13 }
+      MOON_SPIRAL:  { FIRE_INTERVAL:16, ARMS:2, BULLETS_PER_ARM:3, SPEED:2.65, ROTATION_SPEED:.145 },
+      MOON_ARC:     { FIRE_INTERVAL:30, BULLETS:13, SPEED:2.82, ARC:2.55, ROCK:.42 },
+      MOON_WAVE:    { FIRE_INTERVAL:23, BULLETS:12, SPEED:2.46, WAVE:.34, ROTATION_SPEED:.125 },
+      MOON_MIRROR:  { FIRE_INTERVAL:33, BULLETS:8, SPEED:2.72, OFFSET:.19 },
+      MOON_ORBIT:   { FIRE_INTERVAL:20, ORBS:10, SPEED:2.38, ROTATION_SPEED:.16 },
+
+      FORT_LANCE:   { FIRE_INTERVAL:28, ARMS:4, BULLETS_PER_ARM:5, SPEED:3.02, ROTATION_SPEED:.04 },
+      FORT_WALL:    { FIRE_INTERVAL:42, COLUMNS:9, SPEED:2.76, ANGLE_STEP:.11 },
+      FORT_BURST:   { FIRE_INTERVAL:45, POINTS:6, BULLETS_PER_POINT:4, SPEED:2.92, ROTATION_SPEED:.07 },
+      FORT_GRID:    { FIRE_INTERVAL:36, ROWS:5, SPEED:2.57, SWAY:.25 },
+      FORT_CANNON:  { FIRE_INTERVAL:52, VOLLEYS:3, BULLETS:7, SPEED:3.18, ARC:1.25 },
+
+      PETAL_FLOWER: { FIRE_INTERVAL:26, PETALS:9, SPEED:2.76, ROTATION_SPEED:.072, WAVE:.36 },
+      PETAL_SEEDS:  { FIRE_INTERVAL:20, BULLETS:10, SPEED:2.42, ROTATION_SPEED:.115 },
+      PETAL_VINES:  { FIRE_INTERVAL:22, BULLETS:12, SPEED:2.52, CURVE:.24 },
+      PETAL_BLOOM:  { FIRE_INTERVAL:48, RINGS:2, BULLETS:18, SPEED:2.38, STEP:.22 },
+      PETAL_SWIRL:  { FIRE_INTERVAL:18, ORBS:12, SPEED:2.56, ROTATION_SPEED:.155, WAVE:.22 },
+
+      VOID_CAGE:     { FIRE_INTERVAL:34, SIDES:8, BULLETS_PER_SIDE:4, SPEED:2.86, ROTATION_SPEED:.065 },
+      VOID_LANCE:    { FIRE_INTERVAL:22, ARMS:5, BULLETS_PER_ARM:5, SPEED:3.26, ROTATION_SPEED:.105 },
+      VOID_COLLAPSE: { FIRE_INTERVAL:54, BULLETS:32, SPEED:2.52, ROTATION_STEP:.19 },
+      VOID_TWIST:    { FIRE_INTERVAL:15, ARMS:3, BULLETS_PER_ARM:3, SPEED:2.82, ROTATION_SPEED:.18 },
+      VOID_NOVA:     { FIRE_INTERVAL:44, POINTS:10, BULLETS_PER_POINT:3, SPEED:3.12, ROTATION_SPEED:.082 }
     },
 
-    // One unique boss per stage. Waypoint patterns are synchronized with movement:
-    // move -> stop -> fire waypoint pattern -> move to next point.
     VARIANTS: [
       {
         name:'Azure Sentinel', shape:'crystal', size:38, baseHP:560, moveSpeed:3.15, stopTime:110,
         route:[
-          {x:.50,y:.16,patterns:['ROTATING_RING']},
-          {x:.18,y:.30,patterns:['PULSE_RINGS']},
-          {x:.82,y:.30,patterns:['ROTATING_RING','STAR_BURST']},
-          {x:.50,y:.55,patterns:['STAR_BURST']}
+          {x:.50,y:.16,patterns:['PRISM_RING']},
+          {x:.18,y:.30,patterns:['PRISM_FAN']},
+          {x:.82,y:.30,patterns:['PRISM_CROSS']},
+          {x:.28,y:.56,patterns:['PRISM_SPLIT']},
+          {x:.72,y:.56,patterns:['PRISM_PULSE']}
         ]
       },
       {
         name:'Violet Crescent', shape:'crescent', size:44, baseHP:650, moveSpeed:3.35, stopTime:115,
         route:[
-          {x:.20,y:.18,patterns:['DOUBLE_SPIRAL']},
-          {x:.80,y:.18,patterns:['FLOWER']},
-          {x:.78,y:.58,patterns:['DOUBLE_SPIRAL','ORBIT_WAVE']},
-          {x:.22,y:.58,patterns:['ORBIT_WAVE']},
-          {x:.50,y:.34,patterns:['FLOWER']}
+          {x:.20,y:.18,patterns:['MOON_SPIRAL']},
+          {x:.80,y:.18,patterns:['MOON_ARC']},
+          {x:.78,y:.58,patterns:['MOON_WAVE']},
+          {x:.22,y:.58,patterns:['MOON_MIRROR']},
+          {x:.50,y:.34,patterns:['MOON_ORBIT']}
         ]
       },
       {
         name:'Crimson Fortress', shape:'fortress', size:52, baseHP:760, moveSpeed:2.95, stopTime:120,
         route:[
-          {x:.50,y:.14,patterns:['CROSS_LANCE']},
-          {x:.15,y:.45,patterns:['PULSE_RINGS']},
-          {x:.85,y:.45,patterns:['CROSS_LANCE','STAR_BURST']},
-          {x:.50,y:.72,patterns:['STAR_BURST']},
-          {x:.50,y:.36,patterns:['PULSE_RINGS']}
+          {x:.50,y:.14,patterns:['FORT_LANCE']},
+          {x:.15,y:.45,patterns:['FORT_WALL']},
+          {x:.85,y:.45,patterns:['FORT_BURST']},
+          {x:.50,y:.72,patterns:['FORT_GRID']},
+          {x:.50,y:.36,patterns:['FORT_CANNON']}
         ]
       },
       {
         name:'Emerald Bloom', shape:'bloom', size:47, baseHP:850, moveSpeed:3.55, stopTime:105,
         route:[
-          {x:.50,y:.20,patterns:['FLOWER']},
-          {x:.16,y:.70,patterns:['ORBIT_WAVE']},
-          {x:.84,y:.70,patterns:['FLOWER','DOUBLE_SPIRAL']},
-          {x:.82,y:.22,patterns:['ORBIT_WAVE']},
-          {x:.18,y:.22,patterns:['DOUBLE_SPIRAL']}
+          {x:.50,y:.20,patterns:['PETAL_FLOWER']},
+          {x:.16,y:.70,patterns:['PETAL_SEEDS']},
+          {x:.84,y:.70,patterns:['PETAL_VINES']},
+          {x:.82,y:.22,patterns:['PETAL_BLOOM']},
+          {x:.18,y:.22,patterns:['PETAL_SWIRL']}
         ]
       },
       {
@@ -329,10 +346,10 @@ const CONFIG = {
         route:[
           {x:.50,y:.13,patterns:['VOID_CAGE']},
           {x:.14,y:.24,patterns:['VOID_LANCE']},
-          {x:.86,y:.24,patterns:['VOID_CAGE','VOID_LANCE']},
-          {x:.84,y:.72,patterns:['VOID_LANCE']},
-          {x:.16,y:.72,patterns:['VOID_CAGE']},
-          {x:.50,y:.46,patterns:['VOID_CAGE','VOID_LANCE']}
+          {x:.86,y:.24,patterns:['VOID_COLLAPSE']},
+          {x:.84,y:.72,patterns:['VOID_TWIST']},
+          {x:.16,y:.72,patterns:['VOID_NOVA']},
+          {x:.50,y:.46,patterns:['VOID_CAGE','VOID_NOVA']}
         ]
       }
     ]
