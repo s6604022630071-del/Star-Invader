@@ -574,6 +574,29 @@ function fireBossPattern(patternName){
       enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:5,color:'#71ffd2',shape:i%2?'orb':'star'});
     }
   }
+  else if(patternName==='VOID_CAGE' && boss.patternClock%p.FIRE_INTERVAL===0){
+    boss.patternRotation+=p.ROTATION_SPEED;
+    for(let ringIndex=0;ringIndex<p.RINGS;ringIndex++){
+      const count=Math.max(8,Math.round(p.BULLETS*d.bossDensity));
+      const speed=(p.SPEED+ringIndex*p.SPEED_STEP)*d.bulletSpeed;
+      const offset=boss.patternRotation+ringIndex*(Math.PI/count);
+      for(let i=0;i<count;i++){
+        const a=offset+i*Math.PI*2/count;
+        enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:6,color:ringIndex%2?'#d24cff':'#6a3cff',shape:ringIndex%2?'diamond':'orb'});
+      }
+    }
+  }
+  else if(patternName==='VOID_LANCE' && boss.patternClock%p.FIRE_INTERVAL===0){
+    boss.patternRotation+=p.ROTATION_SPEED;
+    const speed=p.SPEED*d.bulletSpeed;
+    for(let arm=0;arm<p.ARMS;arm++){
+      const base=boss.patternRotation+arm*Math.PI*2/p.ARMS;
+      for(let j=0;j<p.BULLETS_PER_ARM;j++){
+        const a=base+(j-(p.BULLETS_PER_ARM-1)/2)*p.SPREAD;
+        enemyBullets.push({x:boss.x,y:boss.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,r:6,color:'#ff3df2',shape:'diamond'});
+      }
+    }
+  }
 
   if(enemyBullets.length>bulletsBefore){
     playBossShotSfx();
@@ -1225,9 +1248,41 @@ function draw(){
         ctx.fillRect(-boss.r,-boss.r*.22,boss.r*2,boss.r*.44);ctx.fillRect(-boss.r*.22,-boss.r,boss.r*.44,boss.r*2);
       }else if(boss.shape==='bloom'){
         ctx.beginPath();for(let i=0;i<20;i++){const a=-Math.PI/2+i*Math.PI/10,rr=i%2===0?boss.r:boss.r*.52,px=Math.cos(a)*rr,py=Math.sin(a)*rr;i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}ctx.closePath();ctx.fill();
+      }else if(boss.shape==='voidcore'){
+        // Final boss: solid central core + four rotating blade arms.
+        // Deliberately non-flower/non-star silhouette so Stage 5 is unmistakable.
+        ctx.beginPath();
+        for(let i=0;i<8;i++){
+          const a=-Math.PI/8+i*Math.PI/4;
+          const rr=boss.r*.58;
+          const px=Math.cos(a)*rr,py=Math.sin(a)*rr;
+          i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+        }
+        ctx.closePath();ctx.fill();
+
+        ctx.save();
+        ctx.rotate(-bossVisualRotation*1.35);
+        for(let arm=0;arm<4;arm++){
+          ctx.save();ctx.rotate(arm*Math.PI/2);
+          ctx.beginPath();
+          ctx.moveTo(boss.r*.30,-boss.r*.18);
+          ctx.lineTo(boss.r*1.08,-boss.r*.34);
+          ctx.lineTo(boss.r*.88,0);
+          ctx.lineTo(boss.r*1.08,boss.r*.34);
+          ctx.lineTo(boss.r*.30,boss.r*.18);
+          ctx.closePath();ctx.fill();
+          ctx.restore();
+        }
+        ctx.restore();
+
+        ctx.fillStyle='#09000f';
+        ctx.beginPath();ctx.arc(0,0,boss.r*.30,0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle='#ff4df2';ctx.lineWidth=3;
+        ctx.beginPath();ctx.arc(0,0,boss.r*.42,0,Math.PI*2);ctx.stroke();
+        ctx.fillStyle='#ffffff';
+        ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fill();
       }else{
-        ctx.beginPath();for(let i=0;i<24;i++){const a=-Math.PI/2+i*Math.PI/12,rr=i%2===0?boss.r:boss.r*.58,px=Math.cos(a)*rr,py=Math.sin(a)*rr;i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}ctx.closePath();ctx.fill();
-        ctx.globalCompositeOperation='destination-out';ctx.beginPath();ctx.arc(0,0,boss.r*.28,0,Math.PI*2);ctx.fill();ctx.globalCompositeOperation='source-over';
+        ctx.beginPath();ctx.arc(0,0,boss.r,0,Math.PI*2);ctx.fill();
       }
 
       ctx.shadowBlur=0;ctx.strokeStyle='#d9dded';ctx.lineWidth=4;ctx.stroke();

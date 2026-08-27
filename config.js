@@ -32,7 +32,7 @@ const CONFIG = {
 
     LOBBY: {
       title:'Main Menu Music (Loop)',
-      url:'https://opengameart.org/sites/default/files/main_menu_music_mastered_0.mp3',
+      url:'./audio/lobby.mp3',
       source:'https://opengameart.org/content/main-menu-music-loop'
     },
 
@@ -47,10 +47,10 @@ const CONFIG = {
 
   SFX: {
     ENABLED: true,
-    VOLUME: 0.6,
+    VOLUME: 0.55,
     BOSS_SHOT: {
       title:'Pew Laser Fire Sound',
-      url:'https://opengameart.org/sites/default/files/laserpew_0.ogg',
+      url:'./audio/boss-shot.ogg',
       source:'https://opengameart.org/content/pew-laser-fire-sound'
     }
   },
@@ -65,7 +65,7 @@ const CONFIG = {
     START_LIFE: 3,
     MAX_LIFE: 6,
     START_BULLET_LINES: 2,
-    MAX_BULLET_LINES: 5,
+    MAX_BULLET_LINES: 6,
 
     HITBOX_RADIUS: 3,
     HIT_IFRAMES: 150,
@@ -82,13 +82,13 @@ const CONFIG = {
       name: 'Rei',
       speed: 5.4,
       focusSpeed: 2.5,
-      fireDelay: 7,
+      fireDelay: 6,
       color: '#ff6d91',
       shotPattern: 'spread',
 
       // Per-line projectile tuning
       bulletSpeed: 10.8,
-      bulletDamage: 1,
+      bulletDamage: 2.0,
       bulletSpreadX: 0.72,
       bulletLineSpacing: 7,
       bulletRadius: 3
@@ -97,13 +97,13 @@ const CONFIG = {
     marisa: {
       name: 'Mari',
       speed: 6.7,
-      focusSpeed: 5,
-      fireDelay: 8,
+      focusSpeed: 3.1,
+      fireDelay: 4,
       color: '#ffe16b',
       shotPattern: 'laser',
 
       bulletSpeed: 13.0,
-      bulletDamage: 1.5,
+      bulletDamage: 3,
       bulletSpreadX: 0.2,
       bulletLineSpacing: 5,
       bulletRadius: 3
@@ -113,12 +113,12 @@ const CONFIG = {
       name: 'Saya',
       speed: 4.8,
       focusSpeed: 2.25,
-      fireDelay: 7,
+      fireDelay: 8,
       color: '#7bc8ff',
       shotPattern: 'pierce',
 
       bulletSpeed: 12.0,
-      bulletDamage: 0.2,
+      bulletDamage: 0.5,
       bulletSpreadX: 0.40,
       bulletLineSpacing: 6,
       bulletRadius: 3,
@@ -164,36 +164,36 @@ const CONFIG = {
       name:'Stage 1 • Azure Dawn',
       backgroundTop:'#081225', backgroundBottom:'#040711', grid:'#334d7750',
       bossGradientA:'#172545', bossGradientB:'#40194c',
-      music:{title:'Urban Battle',bpm:135,url:'https://opengameart.org/sites/default/files/urban_battle_bpm135.ogg',source:'https://opengameart.org/content/urban-battle'},
-      bossMusic:{title:'Urban Boss Battle',bpm:135,url:'https://opengameart.org/sites/default/files/urban_boss_battle_bpm135.ogg',source:'https://opengameart.org/content/urban-boss-battle'}
+      music:{title:'Urban Battle',bpm:135,url:'./audio/stage1.ogg',source:'https://opengameart.org/content/urban-battle'},
+      bossMusic:{title:'Urban Boss Battle',bpm:135,url:'./audio/boss1.ogg',source:'https://opengameart.org/content/urban-boss-battle'}
     },
     {
       name:'Stage 2 • Violet Rain',
       backgroundTop:'#1b102a', backgroundBottom:'#080510', grid:'#6f4b8a45',
       bossGradientA:'#49205d', bossGradientB:'#151934',
-      music:{title:'Trance Battle',bpm:140,url:'https://opengameart.org/sites/default/files/trance_battle_bpm140.ogg',source:'https://opengameart.org/content/trance-battle'},
-      bossMusic:{title:'Trance Boss Battle',bpm:150,url:'https://opengameart.org/sites/default/files/trance_boss_battle_bpm150.ogg',source:'https://opengameart.org/content/trance-boss-battle'}
+      music:{title:'Trance Battle',bpm:140,url:'./audio/stage2.ogg',source:'https://opengameart.org/content/trance-battle'},
+      bossMusic:{title:'Trance Boss Battle',bpm:150,url:'./audio/boss2.ogg',source:'https://opengameart.org/content/trance-boss-battle'}
     },
     {
       name:'Stage 3 • Crimson Sky',
       backgroundTop:'#2a0f18', backgroundBottom:'#09050a', grid:'#8c455045',
       bossGradientA:'#641827', bossGradientB:'#23142f',
-      music:{title:'Space Adventure',bpm:140,url:'https://opengameart.org/sites/default/files/space_adventure_bpm140.ogg',source:'https://opengameart.org/content/space-adventure'},
-      bossMusic:{title:'Space Boss Battle',bpm:175,url:'https://opengameart.org/sites/default/files/space_boss_battle_bpm175.ogg',source:'https://opengameart.org/content/space-boss-battle'}
+      music:{title:'Space Adventure',bpm:140,url:'./audio/stage3.ogg',source:'https://opengameart.org/content/space-adventure'},
+      bossMusic:{title:'Space Boss Battle',bpm:175,url:'./audio/boss3.ogg',source:'https://opengameart.org/content/space-boss-battle'}
     },
     {
       name:'Stage 4 • Emerald Void',
       backgroundTop:'#0c201c', backgroundBottom:'#030907', grid:'#3e806a45',
       bossGradientA:'#174238', bossGradientB:'#202648',
-      music:{title:'Heavy Battle 1',bpm:190,url:'https://opengameart.org/sites/default/files/heavy_battle_1_bpm190.ogg',source:'https://opengameart.org/content/heavy-battle-1'},
-      bossMusic:{title:'Heavy Boss Battle 1',bpm:200,url:'https://opengameart.org/sites/default/files/heavy_boss_battle_1_bpm200.ogg',source:'https://opengameart.org/content/heavy-boss-battle-1'}
+      music:{title:'Heavy Battle 1',bpm:190,url:'./audio/stage4.ogg',source:'https://opengameart.org/content/heavy-battle-1'},
+      bossMusic:{title:'Heavy Boss Battle 1',bpm:200,url:'./audio/boss4.ogg',source:'https://opengameart.org/content/heavy-boss-battle-1'}
     },
     {
       name:'Stage 5 • Black Shrine',
       backgroundTop:'#11131d', backgroundBottom:'#020204', grid:'#77798d35',
       bossGradientA:'#171717', bossGradientB:'#541852',
-      music:{title:'Hard Battle 1',bpm:170,url:'https://opengameart.org/sites/default/files/hard_battle_1_bpm170.ogg',source:'https://opengameart.org/content/hard-battle-1'},
-      bossMusic:{title:'Hard Boss Battle 1',bpm:200,url:'https://opengameart.org/sites/default/files/hard_boss_battle_1_bpm200.ogg',source:'https://opengameart.org/content/hard-boss-battle-1'}
+      music:{title:'Hard Battle 1',bpm:170,url:'./audio/stage5.ogg',source:'https://opengameart.org/content/hard-battle-1'},
+      bossMusic:{title:'Hard Boss Battle 1',bpm:200,url:'./audio/boss5.ogg',source:'https://opengameart.org/content/hard-boss-battle-1'}
     }
   ],
 
@@ -275,7 +275,11 @@ const CONFIG = {
       FLOWER: { FIRE_INTERVAL: 27, PETALS: 9, SPEED: 2.8, ROTATION_SPEED: 0.075, WAVE_AMOUNT: 0.38 },
       STAR_BURST: { FIRE_INTERVAL: 36, POINTS: 5, BULLETS_PER_POINT: 4, SPEED: 3.0, ROTATION_SPEED: 0.10 },
       CROSS_LANCE: { FIRE_INTERVAL: 30, ARMS: 4, BULLETS_PER_ARM: 5, SPEED: 3.1, ROTATION_SPEED: 0.065 },
-      ORBIT_WAVE: { FIRE_INTERVAL: 18, ORBS: 14, SPEED: 2.55, ROTATION_SPEED: 0.155, WAVE: 0.25 }
+      ORBIT_WAVE: { FIRE_INTERVAL: 18, ORBS: 14, SPEED: 2.55, ROTATION_SPEED: 0.155, WAVE: 0.25 },
+
+      // Stage 5 final-boss-only attacks.
+      VOID_CAGE: { FIRE_INTERVAL: 42, RINGS: 3, BULLETS: 12, SPEED: 2.65, SPEED_STEP: 0.34, ROTATION_SPEED: 0.105 },
+      VOID_LANCE: { FIRE_INTERVAL: 22, ARMS: 4, BULLETS_PER_ARM: 3, SPEED: 3.35, SPREAD: 0.085, ROTATION_SPEED: 0.13 }
     },
 
     // One unique boss per stage. Waypoint patterns are synchronized with movement:
@@ -321,14 +325,14 @@ const CONFIG = {
         ]
       },
       {
-        name:'Black Shrine Core', shape:'voidstar', size:58, baseHP:980, moveSpeed:3.85, stopTime:100,
+        name:'Black Shrine Core', shape:'voidcore', size:64, baseHP:1080, moveSpeed:4.15, stopTime:92,
         route:[
-          {x:.50,y:.12,patterns:['STAR_BURST','CROSS_LANCE']},
-          {x:.12,y:.26,patterns:['DOUBLE_SPIRAL']},
-          {x:.88,y:.26,patterns:['ROTATING_RING','ORBIT_WAVE']},
-          {x:.88,y:.72,patterns:['FLOWER']},
-          {x:.12,y:.72,patterns:['PULSE_RINGS','CROSS_LANCE']},
-          {x:.50,y:.48,patterns:['STAR_BURST','ORBIT_WAVE']}
+          {x:.50,y:.13,patterns:['VOID_CAGE']},
+          {x:.14,y:.24,patterns:['VOID_LANCE']},
+          {x:.86,y:.24,patterns:['VOID_CAGE','VOID_LANCE']},
+          {x:.84,y:.72,patterns:['VOID_LANCE']},
+          {x:.16,y:.72,patterns:['VOID_CAGE']},
+          {x:.50,y:.46,patterns:['VOID_CAGE','VOID_LANCE']}
         ]
       }
     ]
