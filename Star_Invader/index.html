@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<title>Star Invader: Bullet Hell</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="musicSettings" class="music-settings">
+  <button id="musicToggle" type="button" aria-label="Mute music">♫</button>
+  <input id="musicVolume" type="range" min="0" max="100" value="42" aria-label="Music volume">
+</div>
+
+<div id="wrap">
+  <div id="musicControl" class="music-control" aria-label="Music volume">
+    <span class="music-icon">♫</span>
+    <input id="musicVolume" type="range" min="0" max="100" value="42" step="1" aria-label="Music volume" />
+  </div>
+
+  <div id="gameShell">
+  <canvas id="game" width="960" height="720"></canvas>
+
+  <div id="hud" class="hidden">
+    <span id="hudLeft"><span class="status-row"><span class="status-name">LIFE</span><span id="lifeIcons"></span></span><span class="status-row"><span class="status-name">SHIELD</span><span id="shieldIcon"></span></span><span class="status-row"><span class="status-name">STAGE</span><span id="stageLabel"></span></span></span>
+    <span id="hudRight"><span class="score-label">SCORE</span><span id="scoreNumber" class="score-number">0</span></span>
+  </div>
+  <div id="bossbar" class="hidden"><div id="bossfill"></div></div>
+
+  <div id="touchControls" class="touch-controls hidden" aria-hidden="true">
+    <div id="joystickZone" class="joystick-zone" aria-label="Movement control">
+      <div class="joystick-base">
+        <div id="joystickKnob" class="joystick-knob"></div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+
+  <section id="menu" class="screen">
+    <div class="panel">
+      <div class="sub">Arcade bullet-hell shooter</div>
+      <h1>STAR<br>INVADER</h1>
+      <p class="sub">Dodge dense patterns, gather power, break the invasion, and survive the shrine guardian.</p>
+      <div class="row">
+        <button id="startBtn">Start Game</button>
+        <button class="ghost" id="howBtn">How to Play</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="select" class="screen hidden">
+    <div class="panel">
+      <h2>Select a Pilot</h2>
+      <div class="sub">Each character changes movement and shot behavior.</div>
+      <div class="characters">
+        <div class="card active" data-char="reimu"><b>Rei</b><small>Balanced movement with a wide spread shot.</small><span class="tag">Balanced</span></div>
+        <div class="card" data-char="marisa"><b>Mari</b><small>Fast movement and high straight-line damage.</small><span class="tag">Attack</span></div>
+        <div class="card" data-char="sakuya"><b>Saya</b><small>Slower movement, piercing focused shots.</small><span class="tag">Precision</span></div>
+      </div>
+      <h3 style="margin:4px 0 8px">Difficulty</h3>
+      <div class="difficulty">
+        <button class="diff" data-diff="easy"><b>Easy</b><small>Slower bullets, fewer patterns.</small></button>
+        <button class="diff active" data-diff="normal"><b>Normal</b><small>Balanced bullet-hell challenge.</small></button>
+        <button class="diff" data-diff="hard"><b>Hard</b><small>Faster bullets, denser patterns.</small></button>
+      </div>
+      <div class="row">
+        <button id="playBtn">Enter Stage</button>
+        <button class="ghost" id="backBtn">Back</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="help" class="screen hidden">
+    <div class="panel manual-panel">
+      <h2>How to Play</h2>
+      <div class="manual-section">
+        <h3>Controls</h3>
+        <div class="manual-controls">
+          <div><kbd>WASD</kbd> / <kbd>Arrows</kbd><span>Move</span></div>
+          <div><kbd>Esc</kbd><span>Pause / resume</span></div>
+        </div>
+      </div>
+      <div class="manual-section">
+        <h3>Power-ups</h3>
+        <div class="powerup-guide">
+          <div class="powerup-guide-item"><span class="guide-icon guide-power"><span class="pickup-power-icon">+</span></span><div><b>Bullet Line</b><small>Adds one firing line. At maximum, gives bonus score.</small></div></div>
+          <div class="powerup-guide-item"><span class="guide-icon guide-shield"><span class="pickup-shield-icon"></span></span><div><b>Shield</b><small>Blocks one hit and grants i-frames. If already active, gives bonus score.</small></div></div>
+          <div class="powerup-guide-item"><span class="guide-icon guide-life"><span class="pickup-life-icon"></span></span><div><b>Life</b><small>Restores one life up to the maximum. At maximum life, gives bonus score.</small></div></div>
+          <div class="powerup-guide-item"><span class="guide-icon guide-score"><span class="pickup-score-icon"></span></span><div><b>Score</b><small>Immediately adds bonus points.</small></div></div>
+        </div>
+      </div>
+      <div style="margin-top:22px"><button id="helpBack">Back</button></div>
+    </div>
+  </section>
+
+  <section id="gameover" class="screen hidden">
+    <div class="panel" style="text-align:center">
+      <div class="sub" id="resultEyebrow">MISSION FAILED</div>
+      <h2 id="resultTitle" style="font-size:48px;margin-bottom:8px">Game Over</h2>
+      <p class="sub" id="resultText">Score: 0</p>
+      <div id="resultStats" style="margin:18px auto 24px;max-width:430px;padding:14px 18px;border:1px solid #30385d;border-radius:12px;background:#0c1020;color:#cbd3f2">
+        Difficulty: Normal
+      </div>
+      <div class="row" style="justify-content:center">
+        <button id="retryBtn">Retry</button>
+        <button class="ghost" id="selectBtn">Character Select</button>
+        <button class="ghost" id="menuBtn">Main Menu</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="config.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
