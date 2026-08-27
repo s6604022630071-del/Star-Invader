@@ -103,26 +103,40 @@ function preloadMusic(url){
   if(!url)return Promise.resolve();
   if(musicPreloadCache.has(url))return musicPreloadCache.get(url);
 
-  const audio=new Audio();
-  audio.preload='auto';
-  audio.src=url;
-  audio.load();
+  const ready=(async()=>{
+    // Warm the browser/network cache first. Local Netlify files should then
+    // already be in cache when the real music element requests them.
+    try{
+      await fetch(url,{cache:'force-cache'});
+    }catch(_){}
 
-  const ready=new Promise(resolve=>{
-    let done=false;
-    const finish=()=>{
-      if(done)return;
-      done=true;
-      audio.removeEventListener('canplaythrough',finish);
-      audio.removeEventListener('loadeddata',finish);
-      audio.removeEventListener('error',finish);
-      resolve();
-    };
-    audio.addEventListener('canplaythrough',finish,{once:true});
-    audio.addEventListener('loadeddata',finish,{once:true});
-    audio.addEventListener('error',finish,{once:true});
-    setTimeout(finish,CONFIG.MUSIC.PRELOAD_WAIT_MS||3000);
-  });
+    // Also ask the media engine to buffer/decode the file in advance.
+    await new Promise(resolve=>{
+      const audio=new Audio();
+      audio.preload='auto';
+      audio.src=url;
+
+      let done=false;
+      const finish=()=>{
+        if(done)return;
+        done=true;
+        audio.removeEventListener('canplaythrough',finish);
+        audio.removeEventListener('canplay',finish);
+        audio.removeEventListener('loadeddata',finish);
+        audio.removeEventListener('error',finish);
+        resolve();
+      };
+
+      audio.addEventListener('canplaythrough',finish,{once:true});
+      audio.addEventListener('canplay',finish,{once:true});
+      audio.addEventListener('loadeddata',finish,{once:true});
+      audio.addEventListener('error',finish,{once:true});
+      audio.load();
+
+      // This is only a preload fallback. Music transitions NEVER wait for it.
+      setTimeout(finish,3000);
+    });
+  })();
 
   musicPreloadCache.set(url,ready);
   return ready;
@@ -131,8 +145,10 @@ function preloadMusic(url){
 function preloadStagePair(stageIndex){
   const stage=CONFIG.STAGES[stageIndex];
   if(!stage)return;
+
   preloadMusic(stage.music?.url);
   preloadMusic(stage.bossMusic?.url);
+
   const next=CONFIG.STAGES[stageIndex+1];
   if(next){
     preloadMusic(next.music?.url);
@@ -140,133 +156,40 @@ function preloadStagePair(stageIndex){
   }
 }
 
-// Begin buffering before the user starts the game.
+// Warm every local music file as soon as the page loads.
+// This does NOT play audio, so it does not conflict with browser autoplay rules.
 preloadMusic(CONFIG.MUSIC?.LOBBY?.url);
-preloadStagePair(0);
-
-
-const musicReadyCache=new Map();
-
-function prepareMusicUrl(url){
-  if(!url)return Promise.resolve(false);
-  if(musicReadyCache.has(url))return musicReadyCache.get(url);
-
-  const probe=new Audio();
-  probe.preload='auto';
-  probe.src=url;
-
-  const ready=new Promise(resolve=>{
-    let done=false;
-
-    const finish=(ok)=>{
-      if(done)return;
-      done=true;
-      probe.removeEventListener('canplaythrough',onReady);
-      probe.removeEventListener('loadeddata',onReady);
-      probe.removeEventListener('error',onError);
-      resolve(ok);
-    };
-
-    const onReady=()=>finish(true);
-    const onError=()=>finish(false);
-
-    probe.addEventListener('canplaythrough',onReady,{once:true});
-    probe.addEventListener('loadeddata',onReady,{once:true});
-    probe.addEventListener('error',onError,{once:true});
-
-    probe.load();
-
-    // Fallback so a browser never blocks the game indefinitely.
-    setTimeout(()=>finish(probe.readyState>=2),CONFIG.MUSIC.PRELOAD_WAIT_MS ?? 3000);
-  });
-
-  musicReadyCache.set(url,ready);
-  return ready;
-}
-
-function preloadStagePair(stageIndex){
-  const stage=CONFIG.STAGES[stageIndex];
-  if(!stage)return;
-
-  prepareMusicUrl(stage.music?.url);
-  prepareMusicUrl(stage.bossMusic?.url);
-
-  const next=CONFIG.STAGES[stageIndex+1];
-  if(next){
-    prepareMusicUrl(next.music?.url);
-    prepareMusicUrl(next.bossMusic?.url);
-  }
-}
-
-function preloadGameAudio(){
-  prepareMusicUrl(CONFIG.MUSIC?.LOBBY?.url);
-  preloadStagePair(0);
-
-  // Warm all remaining local tracks in the background.
-  CONFIG.STAGES.forEach((stage,index)=>{
-    setTimeout(()=>{
-      prepareMusicUrl(stage.music?.url);
-      prepareMusicUrl(stage.bossMusic?.url);
-    },200+index*180);
-  });
-}
-
-preloadGameAudio();
+CONFIG.STAGES.forEach((stage,index)=>{
+  setTimeout(()=>{
+    preloadMusic(stage.music?.url);
+    preloadMusic(stage.bossMusic?.url);
+  },index*120);
+});
 
 function transitionMusicTo(url,mode,restart=true){
   if(!CONFIG.MUSIC?.ENABLED || !url)return;
+  if(desiredMusicUrl===url && musicMode===mode && !stageMusic.paused)return;
 
-  if(desiredMusicUrl===url && musicMode===mode && !stageMusic.paused){
-    return;
-  }
+  // Start warming target track while the old song is still fading.
+  preloadMusic(url);
 
-  // Start buffering the NEXT track immediately while current music is still audible.
-  const readyPromise=prepareMusicUrl(url);
-
-  fadeMusicTo(0,CONFIG.MUSIC.FADE_OUT_FRAMES,async ()=>{
+  fadeMusicTo(0,CONFIG.MUSIC.FADE_OUT_FRAMES,()=>{
     clearMusicRetry();
     stageMusic.pause();
-
-    // Usually this resolves instantly because preparation happened during fade-out.
-    await Promise.race([
-      readyPromise,
-      new Promise(resolve=>setTimeout(resolve,CONFIG.MUSIC.PRELOAD_WAIT_MS ?? 3000))
-    ]);
-
     musicMode=mode;
     desiredMusicUrl=url;
     musicRetryCount=0;
 
     stageMusic.src=url;
     stageMusic.preload='auto';
-    stageMusic.load();
 
-    try{
-      if(restart)stageMusic.currentTime=0;
-    }catch(_){}
+    try{if(restart)stageMusic.currentTime=0;}catch(_){}
 
     applyMusicVolume(0);
 
-    // Wait for the ACTUAL playback element, not just the probe Audio object.
-    if(stageMusic.readyState<2){
-      await new Promise(resolve=>{
-        let finished=false;
-        const done=()=>{
-          if(finished)return;
-          finished=true;
-          stageMusic.removeEventListener('canplay',done);
-          stageMusic.removeEventListener('loadeddata',done);
-          resolve();
-        };
-
-        stageMusic.addEventListener('canplay',done,{once:true});
-        stageMusic.addEventListener('loadeddata',done,{once:true});
-        setTimeout(done,CONFIG.MUSIC.PRELOAD_WAIT_MS ?? 3000);
-      });
-    }
-
-    const playPromise=stageMusic.play();
-    if(playPromise?.catch)playPromise.catch(()=>{});
+    // Do not wait for a preload timeout. Ask the browser to play immediately.
+    const p=stageMusic.play();
+    if(p?.catch)p.catch(()=>{});
 
     fadeMusicTo(masterMusicVolume,CONFIG.MUSIC.FADE_IN_FRAMES);
   });
@@ -275,30 +198,21 @@ function transitionMusicTo(url,mode,restart=true){
 function startLobbyMusic(restart=false){
   const lobby=CONFIG.MUSIC?.LOBBY;
   if(!lobby?.url)return;
-
   musicStage=-1;
-  prepareMusicUrl(lobby.url);
+  preloadMusic(lobby.url);
 
   if(musicMode==='none' || !desiredMusicUrl){
     musicMode='lobby';
     desiredMusicUrl=lobby.url;
-
     stageMusic.src=lobby.url;
-    stageMusic.preload='auto';
     stageMusic.load();
-
-    try{
-      if(restart)stageMusic.currentTime=0;
-    }catch(_){}
-
-    // Start at normal target level on the first user gesture.
-    applyMusicVolume(masterMusicVolume);
-
+    try{if(restart)stageMusic.currentTime=0;}catch(_){}
+    applyMusicVolume(masterMusicVolume*.12);
     const p=stageMusic.play();
     if(p?.catch)p.catch(()=>{});
+    fadeMusicTo(masterMusicVolume,CONFIG.MUSIC.FADE_IN_FRAMES);
     return;
   }
-
   transitionMusicTo(lobby.url,'lobby',restart);
 }
 
@@ -363,10 +277,7 @@ stageMusic.addEventListener('error',()=>{
   },CONFIG.MUSIC.RETRY_DELAY_MS);
 });
 
-function unlockLobbyAudio(){
-  preloadStagePair(currentStage);
-  if(scene!=='game')startLobbyMusic(false);
-}
+function unlockLobbyAudio(){if(scene!=='game')startLobbyMusic(false);}
 document.addEventListener('pointerdown',unlockLobbyAudio,{once:true,capture:true});
 document.addEventListener('keydown',unlockLobbyAudio,{once:true,capture:true});
 
