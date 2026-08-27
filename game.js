@@ -97,40 +97,177 @@ function switchMusic(url,mode,restart=true){
 }
 
 
+const musicPreloadCache=new Map();
+
+function preloadMusic(url){
+  if(!url)return Promise.resolve();
+  if(musicPreloadCache.has(url))return musicPreloadCache.get(url);
+
+  const audio=new Audio();
+  audio.preload='auto';
+  audio.src=url;
+  audio.load();
+
+  const ready=new Promise(resolve=>{
+    let done=false;
+    const finish=()=>{
+      if(done)return;
+      done=true;
+      audio.removeEventListener('canplaythrough',finish);
+      audio.removeEventListener('loadeddata',finish);
+      audio.removeEventListener('error',finish);
+      resolve();
+    };
+    audio.addEventListener('canplaythrough',finish,{once:true});
+    audio.addEventListener('loadeddata',finish,{once:true});
+    audio.addEventListener('error',finish,{once:true});
+    setTimeout(finish,CONFIG.MUSIC.PRELOAD_WAIT_MS||3000);
+  });
+
+  musicPreloadCache.set(url,ready);
+  return ready;
+}
+
+function preloadStagePair(stageIndex){
+  const stage=CONFIG.STAGES[stageIndex];
+  if(!stage)return;
+  preloadMusic(stage.music?.url);
+  preloadMusic(stage.bossMusic?.url);
+  const next=CONFIG.STAGES[stageIndex+1];
+  if(next){
+    preloadMusic(next.music?.url);
+    preloadMusic(next.bossMusic?.url);
+  }
+}
+
+// Begin buffering before the user starts the game.
+preloadMusic(CONFIG.MUSIC?.LOBBY?.url);
+preloadStagePair(0);
+
+
+const musicReadyCache=new Map();
+
+function prepareMusicUrl(url){
+  if(!url)return Promise.resolve(false);
+  if(musicReadyCache.has(url))return musicReadyCache.get(url);
+
+  const probe=new Audio();
+  probe.preload='auto';
+  probe.src=url;
+
+  const ready=new Promise(resolve=>{
+    let done=false;
+
+    const finish=(ok)=>{
+      if(done)return;
+      done=true;
+      probe.removeEventListener('canplaythrough',onReady);
+      probe.removeEventListener('loadeddata',onReady);
+      probe.removeEventListener('error',onError);
+      resolve(ok);
+    };
+
+    const onReady=()=>finish(true);
+    const onError=()=>finish(false);
+
+    probe.addEventListener('canplaythrough',onReady,{once:true});
+    probe.addEventListener('loadeddata',onReady,{once:true});
+    probe.addEventListener('error',onError,{once:true});
+
+    probe.load();
+
+    // Fallback so a browser never blocks the game indefinitely.
+    setTimeout(()=>finish(probe.readyState>=2),CONFIG.MUSIC.PRELOAD_WAIT_MS ?? 3000);
+  });
+
+  musicReadyCache.set(url,ready);
+  return ready;
+}
+
+function preloadStagePair(stageIndex){
+  const stage=CONFIG.STAGES[stageIndex];
+  if(!stage)return;
+
+  prepareMusicUrl(stage.music?.url);
+  prepareMusicUrl(stage.bossMusic?.url);
+
+  const next=CONFIG.STAGES[stageIndex+1];
+  if(next){
+    prepareMusicUrl(next.music?.url);
+    prepareMusicUrl(next.bossMusic?.url);
+  }
+}
+
+function preloadGameAudio(){
+  prepareMusicUrl(CONFIG.MUSIC?.LOBBY?.url);
+  preloadStagePair(0);
+
+  // Warm all remaining local tracks in the background.
+  CONFIG.STAGES.forEach((stage,index)=>{
+    setTimeout(()=>{
+      prepareMusicUrl(stage.music?.url);
+      prepareMusicUrl(stage.bossMusic?.url);
+    },200+index*180);
+  });
+}
+
+preloadGameAudio();
+
 function transitionMusicTo(url,mode,restart=true){
   if(!CONFIG.MUSIC?.ENABLED || !url)return;
 
-  // If this exact track is already active, don't restart/fade it.
   if(desiredMusicUrl===url && musicMode===mode && !stageMusic.paused){
     return;
   }
 
-  // STEP 1: old track 100% -> 0%.
-  fadeMusicTo(0,CONFIG.MUSIC.FADE_OUT_FRAMES,()=>{
-    // STEP 2: only now swap the audio source.
+  // Start buffering the NEXT track immediately while current music is still audible.
+  const readyPromise=prepareMusicUrl(url);
+
+  fadeMusicTo(0,CONFIG.MUSIC.FADE_OUT_FRAMES,async ()=>{
     clearMusicRetry();
     stageMusic.pause();
+
+    // Usually this resolves instantly because preparation happened during fade-out.
+    await Promise.race([
+      readyPromise,
+      new Promise(resolve=>setTimeout(resolve,CONFIG.MUSIC.PRELOAD_WAIT_MS ?? 3000))
+    ]);
 
     musicMode=mode;
     desiredMusicUrl=url;
     musicRetryCount=0;
 
-    if(stageMusic.src!==url){
-      stageMusic.src=url;
-      stageMusic.load();
-    }
+    stageMusic.src=url;
+    stageMusic.preload='auto';
+    stageMusic.load();
 
     try{
       if(restart)stageMusic.currentTime=0;
     }catch(_){}
 
-    // New track starts silently.
     applyMusicVolume(0);
+
+    // Wait for the ACTUAL playback element, not just the probe Audio object.
+    if(stageMusic.readyState<2){
+      await new Promise(resolve=>{
+        let finished=false;
+        const done=()=>{
+          if(finished)return;
+          finished=true;
+          stageMusic.removeEventListener('canplay',done);
+          stageMusic.removeEventListener('loadeddata',done);
+          resolve();
+        };
+
+        stageMusic.addEventListener('canplay',done,{once:true});
+        stageMusic.addEventListener('loadeddata',done,{once:true});
+        setTimeout(done,CONFIG.MUSIC.PRELOAD_WAIT_MS ?? 3000);
+      });
+    }
 
     const playPromise=stageMusic.play();
     if(playPromise?.catch)playPromise.catch(()=>{});
 
-    // STEP 3: new track 0% -> 100%.
     fadeMusicTo(masterMusicVolume,CONFIG.MUSIC.FADE_IN_FRAMES);
   });
 }
@@ -140,20 +277,25 @@ function startLobbyMusic(restart=false){
   if(!lobby?.url)return;
 
   musicStage=-1;
+  prepareMusicUrl(lobby.url);
 
   if(musicMode==='none' || !desiredMusicUrl){
     musicMode='lobby';
     desiredMusicUrl=lobby.url;
-    stageMusic.src=lobby.url;
-    try{if(restart)stageMusic.currentTime=0;}catch(_){}
 
-    // Start quietly but audibly on the user's click/tap.
-    applyMusicVolume(masterMusicVolume*.12);
+    stageMusic.src=lobby.url;
+    stageMusic.preload='auto';
+    stageMusic.load();
+
+    try{
+      if(restart)stageMusic.currentTime=0;
+    }catch(_){}
+
+    // Start at normal target level on the first user gesture.
+    applyMusicVolume(masterMusicVolume);
 
     const p=stageMusic.play();
     if(p?.catch)p.catch(()=>{});
-
-    fadeMusicTo(masterMusicVolume,CONFIG.MUSIC.FADE_IN_FRAMES);
     return;
   }
 
@@ -161,6 +303,7 @@ function startLobbyMusic(restart=false){
 }
 
 function startStageMusic(stageIndex,restart=true){
+  preloadStagePair(stageIndex);
   const stage=CONFIG.STAGES[stageIndex]||CONFIG.STAGES[0];
   if(!stage?.music?.url)return;
 
@@ -182,6 +325,7 @@ function startStageMusic(stageIndex,restart=true){
 }
 
 function startBossMusic(stageIndex,restart=true){
+  preloadStagePair(stageIndex);
   const stage=CONFIG.STAGES[stageIndex]||CONFIG.STAGES[0];
   const track=stage?.bossMusic||stage?.music;
   if(!track?.url)return;
@@ -219,7 +363,10 @@ stageMusic.addEventListener('error',()=>{
   },CONFIG.MUSIC.RETRY_DELAY_MS);
 });
 
-function unlockLobbyAudio(){if(scene!=='game')startLobbyMusic(false);}
+function unlockLobbyAudio(){
+  preloadStagePair(currentStage);
+  if(scene!=='game')startLobbyMusic(false);
+}
 document.addEventListener('pointerdown',unlockLobbyAudio,{once:true,capture:true});
 document.addEventListener('keydown',unlockLobbyAudio,{once:true,capture:true});
 

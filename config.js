@@ -40,8 +40,11 @@ const CONFIG = {
     MAX_RETRIES: 4,
     BOSS_VOLUME_MULTIPLIER: 1.0,
 
-    FADE_OUT_FRAMES: 60,
-    FADE_IN_FRAMES: 60
+    FADE_OUT_FRAMES: 150,
+    FADE_IN_FRAMES: 150,
+
+    // Give local audio time to buffer before first playback/switch.
+    PRELOAD_WAIT_MS: 3000
   },
 
 
